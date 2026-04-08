@@ -96,11 +96,29 @@ Finally, we could identify different types of 3D feature-based models from the t
 
 \subsection{Datasets}
 
-To conclude this section, we will introduce a collection of recent datasets for the purpose of training and validating 3D reconstruction models. The idea is to provide the reader with context on what to find in a dataset, as well as introduce potential candidates for Section 5.
+To conclude this section, we introduce a collection of datasets used for training and validating 3D reconstruction models. The aim is to provide context on what is typically found in a dataset, and to motivate the choice of dataset for the experimentation reported in Section 5.
 
-In \cite{datasets_3drecon}, emphasis is put on the differences, in terms of performance, models can have across different scenarios, and propose three tables grouping datasets based on what they represent: human bodies, indoor scenes and outdoor scenes. We will follow a similar taxonomy on this section.
+In \cite{datasets_3drecon}, emphasis is put on how reconstruction performance can vary substantially across different scenarios, and datasets are grouped according to what they represent: human bodies, indoor scenes and outdoor scenes. We follow the same taxonomy here, but only as a brief overview, since the bulk of the discussion focuses on the datasets that have become the de-facto benchmarks for 3D Gaussian Splatting.
 
-\textbf{TODO}: FIORD?
+\textit{Human bodies.} Datasets in this category typically consist of multi-view RGB or RGB-D recordings of one or more subjects, paired with 3D body, skeleton or mesh annotations obtained from motion-capture systems. Representative examples include Human3.6M, ZJU-MoCap and the THuman series. They are used mostly for human-centric reconstruction, avatar generation and dynamic body modeling, rather than for full-scene novel view synthesis.
+
+\textit{Indoor scenes.} These datasets capture rooms and buildings with RGB-D sensors or laser scanners and provide dense ground-truth geometry. Common examples are ScanNet, Replica and Matterport3D, which are widely used as benchmarks for indoor SLAM, surface reconstruction and semantic 3D scene understanding.
+
+\textit{Outdoor scenes.} Outdoor datasets cover street-scale and large-scale environments captured from vehicles, drones or handheld rigs, with ground truth coming from LiDAR or terrestrial laser scanners. Representative examples include KITTI for autonomous driving scenarios, ETH3D for high-resolution multi-view stereo, and Tanks and Temples for large-scale scene reconstruction.
+
+\textbf{Benchmarks for 3D Gaussian Splatting.} Although the datasets above span the whole 3D reconstruction landscape, the literature on 3D Gaussian Splatting has converged on a much smaller set of benchmarks, originally introduced by the seminal paper \cite{kerbl20233dgs}: Mip-NeRF 360, Tanks and Temples, Deep Blending, and the synthetic NeRF Blender dataset. Most subsequent works on 3DGS extensions, compression and applications report results on these same datasets, which makes them the natural reference for any new experiment.
+
+\textit{Mip-NeRF 360} \cite{barron2022mipnerf360} is the most widely used 3DGS benchmark. It consists of nine real, unbounded, object-centric scenes (five outdoor and four indoor), each captured with 100--330 photographs taken on an orbital trajectory around a central object, with shared intrinsics calibrated using the OpenCV radial distortion model. Its mixture of indoor and outdoor environments and its background complexity make it a particularly challenging testbed for novel view synthesis.
+
+\textit{Tanks and Temples} \cite{knapitsch2017tanks} is a large-scale scene reconstruction benchmark with high-resolution video captures and ground-truth point clouds acquired with an industrial laser scanner. The 3DGS paper reports results on the ``Truck'' and ``Train'' sequences, which have since become standard test scenes for 3DGS variants targeting larger environments.
+
+\textit{Deep Blending} \cite{hedman2018deepblending} provides 19 scenes and roughly 2{,}630 photographs together with COLMAP SfM and MVS reconstructions, refined depth maps and a global textured mesh. The 3DGS paper evaluates on the ``Dr Johnson'' and ``Playroom'' scenes, which exhibit cluttered indoor geometry and view-dependent effects that stress free-viewpoint rendering methods.
+
+\textit{NeRF Synthetic (Blender)} \cite{mildenhall2020nerf} contains synthetic, object-centric scenes rendered from Blender models. Being noise-free and fully controlled, it is mainly used for ablation studies and as a sanity-check benchmark.
+
+Beyond these four classics, more recent datasets are starting to extend 3DGS benchmarking to capture conditions that the original benchmarks do not cover. A notable example is \textit{FIORD} \cite{fiord2025}, a fisheye indoor-outdoor dataset of ten scenes (five indoor and five outdoor) recorded with a dual 200° fisheye rig and accompanied by Faro LIDAR ground-truth point clouds. FIORD provides baseline results for vanilla 3DGS and Nerfacto, and specifically targets the wide field-of-view setting that is largely absent from Mip-NeRF 360 and Tanks and Temples.
+
+For the experimentation reported in Section 5, we adopt \textit{Mip-NeRF 360} as the reference dataset: it contains both indoor and outdoor scenes, it is supported out of the box by virtually every 3DGS implementation, and it was used in the original 3DGS paper, which makes our results directly comparable to the published baselines.
 
 \section{Gaussian Splatting}
 
