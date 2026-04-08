@@ -198,7 +198,12 @@ One of the most significant integrations of 3DGS is in autonomous driving pipeli
 	\item Simulation and sensor modeling. It transforms large outdoors environments into editable Gaussian representations for effective rendering and also sensor simulation in testing environments.
 \end{itemize}
 
-TODO: Explain where and how Gaussian Splatting is applied in Splat2BEV
+In Splat2BEV, 3DGS is implemented as an intermediate representation by using what is called as Gaussian Generator ($G_\theta$), which is a feed-forward network that reconstructs 3D scenes from multi-view inputs. The generator first predicts a depth map for each perspective view, which is then unprojected into 3D space to establish the mean positions ($\mu$) of the Gaussian primitives. Additional attributes for each Gaussian, like opacity ($\sigma$) or covariance ($\Sigma$), are estimated by different prediction heads. Then, to enhance semantic understanding, a feature vector ($f$) that can be learned is attached to each Gaussian, allowing the framework to stream knowledge from vision foundation models (like DINO) directly into the Gaussian field. 
+
+As mentioned earlier, Splat2BEV transforms the 3D Gaussians into a top-down BEV space. It does that by implementing a orthogonal projection, so the linear transformation preserves the geometric consistency of the scene when viewed form above. A Jacobian matrix ($J_{ortho}$) specifically designed for the BEV camera model is used to project each Gaussian into 2D space. Once the Gaussians are projected, a BEV feature map is integrated by using the differentiable rendering capability of 3DGS. The resulting BEV feature map is the direct input for BEV encoder and a segmentation head, which produce the final predictions for pedestrians, vehicles and road lanes.
+
+The implementation of the framework follows a process of, first, pretraining the Gaussian generator to achieve accurate 3D reconstruction; then, the generator is frozen while the BEV encoder and segmentation heads are trained to interpret the 3DGS representation. Finally, the pipeline is fine-tuned, allowing gradients from the specific task's losses to flow back into the 3D Gaussian field to optimize the geometry and features for specific goals. \\
+
 
 Another framework that focuses on the topic of autonomous driving is SSTD-GS \cite{sstdgs}, a self-supervised approach used for dynamic scene reconstruction. It enables:
 \begin{itemize}
@@ -207,7 +212,10 @@ Another framework that focuses on the topic of autonomous driving is SSTD-GS \ci
 	\item Gaussian adaptive control. It manages to suppress bad-quality densification caused by rendering errors, ensuring a robust scene reconstruction.
 \end{itemize}
 
-TODO: Explain where and how Gaussian Splatting is applied in SSTD-GS
+In the framework SSTD-GS, 3DGS is used as the core scene representation, augmented with a spatiotemporal deformation field to adress dynamic street scenes. SSTD-GS is built on normal Gaussian primitives, defined by their position ($\mu$), opacity ($\sigma$), covariance ($\Sigma$) and spherical harmonics ($SH$); and to enable the dynamic modeling, the framework adds two additional learnable parameters to each Gaussian: learnable velocity $v$ and a semantic attribute $f_{sem}$. $v$ encodes the motion characteristics of elements to learn deformations, and $f_{sem}$ ensures semantic consistency across frames so the objects do not disappear during the reconstruction.
+
+The framework also implements a multi-head Gaussian decoder to transform the static Gaussians into dynamic ones. This is achieved by predicting the offset of the attributes, specifically four: position, pose, scale and appearance; as the decoder has four heads. Additionally, to supervise the 3D Gaussian field, the framework uses features based on 2D image from vision foundation models to generate a dynamic mask ($M$) for each frame. The velocity attributes of the Gaussians are mapped into a 2D velocity map, and the system then applies a loss function to ensure that Gaussians outside the mask (static ones) have velocity zero, separating dynamic and static elements.
+
 
 \subsection{Bi-Modal and Thermal Mapping}
 
