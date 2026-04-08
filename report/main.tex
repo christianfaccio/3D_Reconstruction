@@ -56,53 +56,51 @@
 %----------------------------------------------------------------------------------------
 
 \section{Introduction}
-\lettrine[findent=2pt]{\textbf{S}}{}n the field of Computer Vision, 3D scene and object reconstruction from multiple views is the task in which the geometrical structure of a scene is inferred from a collection of images. The objective is to solve a pixel-wise correspondence problem from these images, assuming or estimating the position of the cameras and the internal parameters \cite{tum_mvr}.
+\lettrine[findent=2pt]{\textbf{I}}{}n the field of Computer Vision, 3D scene and object reconstruction from multiple views is the task in which the geometrical structure of a scene is inferred from a collection of images. The objective is to solve a pixel-wise correspondence problem from these images, assuming or estimating the position of the cameras and the internal parameters \cite{tum_mvr}.
 Although being one of the most fundamental problems in the field, it still poses several challenges. Different methods exist, each with different representations and outputs, and with their own compromises in speed, complexity or accuracy \cite{review_3drecon_2025}. Over the years, new advances have been achieved, proposing methodologies able to perform real time and detailed reconstructions of 3D scenes; one of these methodologies is Gaussian Splatting, which uses 3D Gaussians with Structure-from-Motion (SfM) inputs \cite{kerbl20233dgs}. In broader terms, it represents the scene as a cloud of 3D Gaussian points, enabling efficient and realistic visualization with effects like transparency and anti-aliasing.
 In this work, we aim to update the state of the art of the methods that address the problem of multiview 3D scene reconstruction using the Gaussian Splatting technique. The document is structured as follows: Section 2 introduces the literature previous to Gaussian Splatting and the basis behind the Gaussian Splatting technique. Section 3 explains the details behind the Gaussian Splatting methodology as well as a discussion of its performance and other extensions of the technique. Section 4 explores different applications of the Gaussian Splatting technique in other works. Section 5 performs a practical experimentation on Gaussian Splatting models for further insights. Finally, Section 6 summarises the information from the previous sections.
 
 \section{Previous Work}
 In this section, we discuss different methodologies and resources for 3D multiscene reconstruction that have been relevant in the literature of the topic. We expect to provide a general context of the field of 3D reconstruction to those readers who may not be up to date in the field as well as providing understanding on what characterises the Gaussian Splatting technique, explained in detail in Section 3.
 
-TODO: Find reviews
+\textbf{TODO}: Find reviews
 
 \subsection{Photogrammetry}
 Photogrammetry refers to the act of taking reliable measurements from photographs. Specifically, it relies in the idea that an object can be represented in three dimension from multiple two-dimensional images taken from different angles, following the same principles behind the stereoscopic human vision \cite{photogrammetry_2freedom}. It can be understood as an inverse process from photography: obtain a 3D model from features of 2D representations.
-
-One of the key concepts in photogrammetry is \textbf{triangulation}: the process of identifying common points in overlapping pictures to determine its position in the 3D space, with the use of external parameters like camera position and orientation \cite{photogrammetry_artec}. Figure 1 features a diagram of this process.
-
+One of the key concepts in photogrammetry is \textbf{triangulation}: the process of identifying common points in overlapping pictures to determine its position in the 3D space, with the use of external parameters like camera position and orientation \cite{photogrammetry_artec}. Fig.~\ref{fig:1} features a diagram of this process.
 In the field of computer vision, the pipeline of recovering 3D information from images is often referred as Structure-from-Motion (SfM). One benefit of SfM is that projection matrices can be computed from the corresponding points in each view \cite{sfm_medium}.
 
-%% IMAGE
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{assets/1.png}
+	\caption{Process of triangulation in 3D reconstruction.}
+	\label{fig:1}
+\end{figure}
 
-The pipeline is traditionally composed of four steps: feature extraction, which consists on detecting local features, ideally invariant under geometric changes, from the source images; feature matching, in which the previously obtained features are used to identify images that see the same scene part; 3D reconstruction, and finally, bundle adjustment, in which the 3D points and camera positions are refined. However, this process can vary between works. For example in \cite{schoenberger2016sfm}, feature matching is followed by a geometric verification step that tries to estimate a transformation mapping between feature points of the images using geometric relations. In addition, 3D reconstruction is done incrementally, based on image registration from an initial two-view reconstruction and triangulation.
-
+The pipeline is traditionally composed of four steps: \textit{feature extraction}, which consists on detecting local features, ideally invariant under geometric changes, from the source images; \textit{feature matching}, in which the previously obtained features are used to identify images that see the same scene part; \textit{3D reconstruction}, and finally, \textit{bundle adjustment}, in which the 3D points and camera positions are refined. However, this process can vary between works. For example in \cite{schoenberger2016sfm}, feature matching is followed by a geometric verification step that tries to estimate a transformation mapping between feature points of the images using geometric relations. In addition, 3D reconstruction is done incrementally, based on image registration from an initial two-view reconstruction and triangulation.
 Since the outputs of SfM pipelines are sparse point clouds and camera positions, it is usual to apply additional techniques such as Multi-view Stereo (MVS). This method also produces a 3D model from 2D inputs, but relies on information that can be calculated by SfM such as camera parameters. MVS outputs a dense 3D representation in contrast with SfM, refining its output as a result \cite{stackoverflow_mvs_sfm}.
-
 The MVS pipeline, as previously stated, typically uses the camera poses from SfM to estimate a depth map for each image and fuse them into the 3D point clouds. Then, volumetric 3D reconstruction is applied to construct a triangular mesh of the object \cite{romanoni2021facetwise}. 
-
 Recently, research has drifted towards learning-based modules like DUSt3R \cite{wang2024dust3r}, which computes a stereo reconstruction for all the image pairs to obtain globally aligned pointmaps for all the cameras optimising pairs of rigid transformations and local pointmaps. Other works such as Light3R-SfM \cite{elflein2025light3rsfm} aim to directly obtain the globally aligned camera poses avoiding the global alignment step through the use of an attention module.
 
 \subsection{Neural Radiance Fields (NeRF)}
 
 Neural radiance fields (NeRF) represent a scene as a continuous function, mapping a position and a direction to a specific colour and volume density. NeRF models approximate this function by means of neural networks, specifically MLP, regressing from a 5D coordinate (encoding the position in the space and the direction) to the density and colour \cite{mildenhall2020nerf}. This method also utilises positional encodings to create a mapping of the input to the high frequencies, improving the resolution of the output.
-
 Nowadays, feed-forward approaches are being proposed. As stated in \cite{feedforward_nerf_survey}, this addresses the optimisation specific for each scene which limits generalisation. From this approach, several models can be classified based on the shape of its features: 1D, 2D or 3D.
-
 Some methods try to encode a one-dimensional vector that englobes the NeRF prediction, such as CodeNeRF \cite{jang2021codenerf}. It extends the original NeRF methodology by “learning to disentangle shape and texture by learning separate embeddings”. However, this approach requires optimisation on test time.
-
 For 2D feature representations, models typically employ an image encoder. We can find some examples in the literature such as NerFormer \cite{reizenstein2021nerformer}. This approach employs Transformers and neural implicit rendering to learn how to reconstruct the object thanks to “jointly aggregate features from the source views”.
-
-Finally, we could identify different types of 3D feature-based models from the type of 3D feature it uses as its representation \cite{feedforward_nerf_survey}. On one hand, models can employ 3D volume features, which are inspired by the previously mentioned MVS. An specific example of this is MVSNeRF \cite{chen2021mvsnerf}, which focuses on “learning a generic network for radiance field reconstruction”. Specifically, the radiance field is used to do regression for the rendering properties of the object, which is then used in the synthesis. On the other hand we find models that use 3D triplane features, such as the Large Reconstruction Model (LRM) \cite{hong2023lrm}. This model is based on a Transformer architecture as well, consisting of an image encoder (which encodes the input into feature tokens) and a decoder that projects such features into a triplane representation. This representation is used for NeRF prediction.
+Finally, we could identify different types of 3D feature-based models from the type of 3D feature it uses as its representation \cite{feedforward_nerf_survey}. On one hand, models can employ 3D volume features, which are inspired by the previously mentioned MVS. A specific example of this is MVSNeRF \cite{chen2021mvsnerf}, which focuses on “learning a generic network for radiance field reconstruction”. Specifically, the radiance field is used to do regression for the rendering properties of the object, which is then used in the synthesis. On the other hand we find models that use 3D triplane features, such as the Large Reconstruction Model (LRM) \cite{hong2023lrm}. This model is based on a Transformer architecture as well, consisting of an image encoder (which encodes the input into feature tokens) and a decoder that projects such features into a triplane representation. This representation is used for NeRF prediction.
 
 \subsection{3D-Free Models}
 
+\textbf{TODO}
+
 \subsection{Datasets}
 
-To conclude with this section, we will introduce a collection of recent datasets for the purpose of training and validating 3D reconstruction models. The idea is to provide the reader with context on what to find in a dataset, as well as introduce potential candidates for Section 5.
+To conclude this section, we will introduce a collection of recent datasets for the purpose of training and validating 3D reconstruction models. The idea is to provide the reader with context on what to find in a dataset, as well as introduce potential candidates for Section 5.
 
-In \cite{datasets_3drecon}, emphasis is put on the differences in terms of performance models can have across different scenarios, and propose three tables grouping datasets based on what they represent: human bodies, indoor scenes and outdoor scenes. We will follow a similar taxonomy on this section.
+In \cite{datasets_3drecon}, emphasis is put on the differences, in terms of performance, models can have across different scenarios, and propose three tables grouping datasets based on what they represent: human bodies, indoor scenes and outdoor scenes. We will follow a similar taxonomy on this section.
 
-TODO: FIORD?
+\textbf{TODO}: FIORD?
 
 \section{Gaussian Splatting}
 
@@ -122,7 +120,12 @@ A single gaussian is defined as:
 
 but now that we have a 3D volume composed of gaussians, how do we represent it in 2D?
 
-%% IMAGE
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{assets/2.png}
+	\caption{Process of projecting a 3D Gaussian into a 2D image plane.}
+	\label{fig:2}
+\end{figure}
 
 We simply change coordinates using first a coordinate transformation (3D->3D) and then a perspective projection (3D->2D). The first is defined as:
 
@@ -140,7 +143,12 @@ We have to apply this concept to the gaussians, which is a bit different. Since 
 
 After this step, we go to the \textbf{Ray Space}, a special non-linear transformation (3D->3D) that aligns the rays parallel to a coordinate axis making it easier to integrate along the ray \cite{zwicker2001ewa}.
 
-%% IMAGE
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{assets/3.png}
+	\caption{Process of transforming the 3D Gaussians into the Ray Space.}
+	\label{fig:3}
+\end{figure}
 
 With this transformation, the mean vector becomes:
 
@@ -170,12 +178,17 @@ Now we can start understanding the algorithm:
 	\end{enumerate}
 \end{enumerate}
 
-%% IMAGE
+\begin{figure}
+	\centering
+	\includegraphics[width=0.45\textwidth]{assets/4.png}
+	\caption{Process of optimization and adaptive density control in Gaussian Splatting.}
+	\label{fig:4}
+\end{figure}
 Finally, \textbf{tile-based rasterization} is used to represent the 3D gaussians in a 2D image. The process is the one outlined above, with the single modification that the image is splitted in tiles so that parallelization and efficient use of GPUs can be done.
 
 \subsection{Extensions of Gaussian Splatting}
 
-TODO
+\textbf{TODO}
 
 https://github.com/Anttwo/SuGaR ?
 
@@ -187,82 +200,78 @@ https://github.com/dreamgaussian/dreamgaussian
 
 This section explores some of the diverse applications of 3D Gaussian Splatting (3DGS) as documented in the most recent literature from 2025 and 2026. As we will see in recent real-word tasks, 3DGS has evolved into a robust framework for geometric reconstruction and semantic scene understanding.
 
-TODO: Explain a bit more how and where each framework integrates gaussian splatting.For now, just described and summarized some of the recent work.
+\textbf{TODO}: Explain a bit more how and where each framework integrates gaussian splatting.For now, just described and summarized some of the recent work.
 
 \subsection{Bird's-Eye-View (BEV) Representation and Autonomous Driving}
 
 One of the most significant integrations of 3DGS is in autonomous driving pipelines. Instead of treating the perception as a black-box, recent frameworks like Splat2BEV \cite{splat2bev} use 3DGS as an intermediate representation. The approach allows the following:
 \begin{itemize}
-	\item Semantic segmentation. It achieves state of the art results in identifying obstacles such as vehicles and pedestrians, and road elements like lanes by streaming information from vision foundation models into the Gaussian field. 
-	\item Geometry-aligned representations. Projecting 3D Gaussians into a top-down perspective (BEV space) to support downstream tasks like 3D object detection, path planning, etc.
-	\item Simulation and sensor modeling. It transforms large outdoors environments into editable Gaussian representations for effective rendering and also sensor simulation in testing environments.
+	\item \textit{Semantic segmentation}. It achieves state of the art results in identifying obstacles such as vehicles and pedestrians, and road elements like lanes by streaming information from vision foundation models into the Gaussian field. 
+	\item \textit{Geometry-aligned representations}. Projecting 3D Gaussians into a top-down perspective (BEV space) to support downstream tasks like 3D object detection, path planning, etc.
+	\item \textit{Simulation and sensor modeling}. It transforms large outdoors environments into editable Gaussian representations for effective rendering and also sensor simulation in testing environments.
 \end{itemize}
 
 In Splat2BEV, 3DGS is implemented as an intermediate representation by using what is called as Gaussian Generator ($G_\theta$), which is a feed-forward network that reconstructs 3D scenes from multi-view inputs. The generator first predicts a depth map for each perspective view, which is then unprojected into 3D space to establish the mean positions ($\mu$) of the Gaussian primitives. Additional attributes for each Gaussian, like opacity ($\sigma$) or covariance ($\Sigma$), are estimated by different prediction heads. Then, to enhance semantic understanding, a feature vector ($f$) that can be learned is attached to each Gaussian, allowing the framework to stream knowledge from vision foundation models (like DINO) directly into the Gaussian field. 
-
 As mentioned earlier, Splat2BEV transforms the 3D Gaussians into a top-down BEV space. It does that by implementing a orthogonal projection, so the linear transformation preserves the geometric consistency of the scene when viewed form above. A Jacobian matrix ($J_{ortho}$) specifically designed for the BEV camera model is used to project each Gaussian into 2D space. Once the Gaussians are projected, a BEV feature map is integrated by using the differentiable rendering capability of 3DGS. The resulting BEV feature map is the direct input for BEV encoder and a segmentation head, which produce the final predictions for pedestrians, vehicles and road lanes.
-
 The implementation of the framework follows a process of, first, pretraining the Gaussian generator to achieve accurate 3D reconstruction; then, the generator is frozen while the BEV encoder and segmentation heads are trained to interpret the 3DGS representation. Finally, the pipeline is fine-tuned, allowing gradients from the specific task's losses to flow back into the 3D Gaussian field to optimize the geometry and features for specific goals. \\
 
 
 Another framework that focuses on the topic of autonomous driving is SSTD-GS \cite{sstdgs}, a self-supervised approach used for dynamic scene reconstruction. It enables:
 \begin{itemize}
-	\item Spatiotemporal deformation. It achieves fine modeling of dynamic objects by predicting the motion properties of the Gaussian using a deformation field, capturing the movements without requiring manual 3D annotations.
-	\item Uncertainty mask optimization. It utilizes a self-supervised strategy to optimize both static and dynamic objects, improving the clarity of modeling in complex urban environments.
-	\item Gaussian adaptive control. It manages to suppress bad-quality densification caused by rendering errors, ensuring a robust scene reconstruction.
+	\item \textit{Spatiotemporal deformation}. It achieves fine modeling of dynamic objects by predicting the motion properties of the Gaussian using a deformation field, capturing the movements without requiring manual 3D annotations.
+	\item \textit{Uncertainty mask optimization}. It utilizes a self-supervised strategy to optimize both static and dynamic objects, improving the clarity of modeling in complex urban environments.
+	\item \textit{Gaussian adaptive control}. It manages to suppress bad-quality densification caused by rendering errors, ensuring a robust scene reconstruction.
 \end{itemize}
 
 In the framework SSTD-GS, 3DGS is used as the core scene representation, augmented with a spatiotemporal deformation field to adress dynamic street scenes. SSTD-GS is built on normal Gaussian primitives, defined by their position ($\mu$), opacity ($\sigma$), covariance ($\Sigma$) and spherical harmonics ($SH$); and to enable the dynamic modeling, the framework adds two additional learnable parameters to each Gaussian: learnable velocity $v$ and a semantic attribute $f_{sem}$. $v$ encodes the motion characteristics of elements to learn deformations, and $f_{sem}$ ensures semantic consistency across frames so the objects do not disappear during the reconstruction.
-
 The framework also implements a multi-head Gaussian decoder to transform the static Gaussians into dynamic ones. This is achieved by predicting the offset of the attributes, specifically four: position, pose, scale and appearance; as the decoder has four heads. Additionally, to supervise the 3D Gaussian field, the framework uses features based on 2D image from vision foundation models to generate a dynamic mask ($M$) for each frame. The velocity attributes of the Gaussians are mapped into a 2D velocity map, and the system then applies a loss function to ensure that Gaussians outside the mask (static ones) have velocity zero, separating dynamic and static elements.
-
 
 \subsection{Bi-Modal and Thermal Mapping}
 
 Gaussian attributes have such versatility that it has opened the door to multimodal applications, such as those that combine regular RGB photos with infrared (IR) images. This is what the BiNAR \cite{binar2026} framework proposes.
 \begin{itemize}
-	\item RGB-IR fusion. The BiNAR framework allows the joint scene reconstruction of non aligned RGB and IR data. This can be applied to unmanned aerial night-time inspection and post-disaster thermal mapping, where thermal information is crucial, but lacks the resolution and texture of RGB images.
-	\item Temperature modeling. The authors of the framework created and released a new dataset that supports the recovery of real world temperature values at pixel level, aligned with the high resolution 3D geometry.
+	\item \textit{RGB-IR fusion}. The BiNAR framework allows the joint scene reconstruction of non aligned RGB and IR data. This can be applied to unmanned aerial night-time inspection and post-disaster thermal mapping, where thermal information is crucial, but lacks the resolution and texture of RGB images.
+	\item \textit{Temperature modeling}. The authors of the framework created and released a new dataset that supports the recovery of real world temperature values at pixel level, aligned with the high resolution 3D geometry.
 \end{itemize}
 
-TODO: Explain where and how Gaussian Splatting is applied in BiNAR
+\textbf{TODO}: Explain where and how Gaussian Splatting is applied in BiNAR
 
 \subsection{Urban Surveying and "In-the-Wild" Reconstruction}
 
 Drones equipped with 3DGS-based frameworks like DroneSplat \cite{dronesplat2025} can be used for robust reconstruction in uncontrolled environments. This framework is useful for:
 \begin{itemize}
-	\item Eliminating dynamic distractors. 3DGS methods can identify and mask moving objects (pedestrians or vehicles) in an adaptive way, producing static models of busy urban areas like streets and intersections.
-	\item Geological and cultural preservation. The maneuverability of drones combined with the representational capabilities of 3DGS can support geological investigations and the digital preservation of cultural sites that are difficult to access.
+	\item \textit{Eliminating dynamic distractors}. 3DGS methods can identify and mask moving objects (pedestrians or vehicles) in an adaptive way, producing static models of busy urban areas like streets and intersections.
+	\item \textit{Geological and cultural preservation}. The maneuverability of drones combined with the representational capabilities of 3DGS can support geological investigations and the digital preservation of cultural sites that are difficult to access.
 \end{itemize}
 
-TODO: Explain where and how Gaussian Splatting is applied in DroneSplat
+\textbf{TODO}: Explain where and how Gaussian Splatting is applied in DroneSplat
 
 \subsection{Super-Resolution and Sparse View Reconstruction}
 
 Recent architectural improvements have augmented the applicability of 3DGS to areas or scenarios with limited and low-quality data. Frameworks like SR3R \cite{sr3r} can achieve it in the 3D scene, while other like MeshSplat \cite{meshsplat} are applied in 2D scenarios:
 \begin{itemize}
-	\item Super-resolution reconstruction. SR3R can reconstruct high-resolution 3D scenes from low-resolution (LR) multi-view images, enabling high quality 3D models even when the hardware is limited.
-	\item Sparse-view mesh generation. Although not a 3D approach, MeshSplat uses 2D Gaussians as a link to integrate accurate surface geometry from very sparse input views, helping mesh reconstruction in computer vision tasks.
+	\item \textit{Super-resolution reconstruction}. SR3R can reconstruct high-resolution 3D scenes from low-resolution (LR) multi-view images, enabling high quality 3D models even when the hardware is limited.
+	\item \textit{Sparse-view mesh generation}. Although not a 3D approach, MeshSplat uses 2D Gaussians as a link to integrate accurate surface geometry from very sparse input views, helping mesh reconstruction in computer vision tasks.
 \end{itemize}
 
-TODO: Explain where and how Gaussian Splatting is applied in SR3S and (optionally) MeshSplat
+\textbf{TODO}: Explain where and how Gaussian Splatting is applied in SR3S and (optionally) MeshSplat
 
 \subsection{Infrastructure Inspection and Digital Twins}
 
 In the field of high fidelity modeling of industrial infrastructure, 3DGS has showed superior performance, especially in scenarios where traditional LiDAR struggles. Research on \cite{powergrid_3dgs} utilizes 3DGS to shed light on the following topics:
 \begin{itemize}
-	\item Power grid management. Using 3DGS for the rapid 3D reconstruction of power transmission towers excelled at preserving fine structural details, like thin cables. These fine details are critical for fault detection and structural inspections.
-	\item Asset lifecycle management. By reducing the modeling time by $\sim 70\%$ compared to traditional methods, 3DGS seems to provide a technical foundation for digital twins, permitting documentation in virtual environments.
+	\item \textit{Power grid management}. Using 3DGS for the rapid 3D reconstruction of power transmission towers excelled at preserving fine structural details, like thin cables. These fine details are critical for fault detection and structural inspections.
+	\item \textit{Asset lifecycle management}. By reducing the modeling time by $\sim 70\%$ compared to traditional methods, 3DGS seems to provide a technical foundation for digital twins, permitting documentation in virtual environments.
 \end{itemize}
-TODO: Explain where and how Gaussian Splatting is applied in \cite{powergrid_3dgs}
+\textbf{TODO}: Explain where and how Gaussian Splatting is applied in \cite{powergrid_3dgs}
 
 Other authors also proposed a novel GS-enabled digital twin method \cite{digitaltwin_damage} for precise 3D damage visualization in civil infrastructures. This framework provides some key contributions:
 \begin{itemize}
-	\item Joint visualization and reconstruction. Instead of first reconstructing and then visualizing the damages, this GS-based method incorporates the visualization directly into the reconstruction workflow by incorporating 2D segmentation results into the loss function, so the model is able to learn and correct segmentation errors while visualizing 3D damage ... 
-	\item Hierarchical reconstruction. By using a hierarchical reconstruction strategy, the framework is able to conserve computational resources by first using low-resolution images for the initial overview of the structure. Then, only for regions with damage, high-resolution images are used to fine-tune the model, achieving a detailed reconstruction.
-	\item Damage progression tracking. It enables model updates  as the conditions of the structure evolve, so it permits the documentation of damage progression without requiring a full re-run of the scene reconstruction.
+	\item \textit{Joint visualization and reconstruction}. Instead of first reconstructing and then visualizing the damages, this GS-based method incorporates the visualization directly into the reconstruction workflow by incorporating 2D segmentation results into the loss function, so the model is able to learn and correct segmentation errors while visualizing 3D damage simultaneously.
+	\item \textit{Hierarchical reconstruction}. By using a hierarchical reconstruction strategy, the framework is able to conserve computational resources by first using low-resolution images for the initial overview of the structure. Then, only for regions with damage, high-resolution images are used to fine-tune the model, achieving a detailed reconstruction.
+	\item \textit{Damage progression tracking}. It enables model updates  as the conditions of the structure evolve, so it permits the documentation of damage progression without requiring a full re-run of the scene reconstruction.
 \end{itemize}
-TODO: Explain where and how Gaussian Splatting is applied in \cite{digitaltwin_damage}
+\textbf{TODO}: Explain where and how Gaussian Splatting is applied in \cite{digitaltwin_damage}
 
 \section{Experimentation}
 
