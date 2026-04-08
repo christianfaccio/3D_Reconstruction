@@ -8,3 +8,5 @@
 *.log
 *.fls
 *.fdb_latexmk
+*.bbl-SAVE-ERROR
+.DS_Store

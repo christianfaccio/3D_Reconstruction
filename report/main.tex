@@ -58,7 +58,7 @@
 \section{Introduction}
 \lettrine[findent=2pt]{\textbf{I}}{}n the field of Computer Vision, 3D scene and object reconstruction from multiple views is the task in which the geometrical structure of a scene is inferred from a collection of images. The objective is to solve a pixel-wise correspondence problem from these images, assuming or estimating the position of the cameras and the internal parameters \cite{tum_mvr}.
 Although being one of the most fundamental problems in the field, it still poses several challenges. Different methods exist, each with different representations and outputs, and with their own compromises in speed, complexity or accuracy \cite{review_3drecon_2025}. Over the years, new advances have been achieved, proposing methodologies able to perform real time and detailed reconstructions of 3D scenes; one of these methodologies is Gaussian Splatting, which uses 3D Gaussians with Structure-from-Motion (SfM) inputs \cite{kerbl20233dgs}. In broader terms, it represents the scene as a cloud of 3D Gaussian points, enabling efficient and realistic visualization with effects like transparency and anti-aliasing.
-In this work, we aim to update the state of the art of the methods that address the problem of multiview 3D scene reconstruction using the Gaussian Splatting technique. The document is structured as follows: Section 2 introduces the literature previous to Gaussian Splatting and the basis behind the Gaussian Splatting technique. Section 3 explains the details behind the Gaussian Splatting methodology as well as a discussion of its performance and other extensions of the technique. Section 4 explores different applications of the Gaussian Splatting technique in other works. Section 5 performs a practical experimentation on Gaussian Splatting models for further insights. Finally, Section 6 summarises the information from the previous sections.
+In this work, we review the state of the art of the methods that address the problem of multiview 3D scene reconstruction using the Gaussian Splatting technique. The document is structured as follows: Section 2 introduces the literature previous to Gaussian Splatting and the basis behind the Gaussian Splatting technique. Section 3 explains the details behind the Gaussian Splatting methodology as well as a discussion of its performance and other extensions of the technique. Section 4 explores different applications of the Gaussian Splatting technique in other works. Section 5 performs a practical experimentation on Gaussian Splatting models for further insights. Finally, Section 6 summarises the information from the previous sections.
 
 \section{Previous Work}
 In this section, we discuss different methodologies and resources for 3D multiscene reconstruction that have been relevant in the literature of the topic. We expect to provide a general context of the field of 3D reconstruction to those readers who may not be up to date in the field as well as providing understanding on what characterises the Gaussian Splatting technique, explained in detail in Section 3.
@@ -292,6 +292,51 @@ Other authors also proposed a novel GS-enabled digital twin method \cite{digital
 \textbf{TODO}: Explain where and how Gaussian Splatting is applied in \cite{digitaltwin_damage}
 
 \section{Experimentation}
+
+To complement the literature review, we ran a small reproduction of the original 3D Gaussian Splatting pipeline on a single Mip-NeRF 360 scene, you can find the relative Colab notebook \href{https://colab.research.google.com/drive/1-AMqt-jT3cKZM5L3S8Mn0gAakdQHiVk6?usp=sharing}{here}. The goal of this experiment is not to push state of the art, but to (i) get hands-on experience with the official implementation, (ii) verify that the results reported in \cite{kerbl20233dgs} are reproducible on a modest GPU, and (iii) provide concrete numbers (training time, model size, rendering speed) that put the qualitative descriptions of Section 3 in context.
+
+\subsection{Setup}
+
+We use the official reference implementation released by the authors of \cite{kerbl20233dgs} (\texttt{graphdeco-inria/gaussian-splatting}) without any modification, running it on a Google Colab notebook so that the experiment is fully reproducible from a browser. The notebook used for this experiment is available in the \texttt{experimentation/} folder of the project repository.
+
+The hardware used is a single NVIDIA T4 GPU (16\,GB VRAM), which is the default Colab free-tier accelerator and a much weaker GPU than the NVIDIA A6000 used in the original paper. This allows us to verify that the method remains usable on entry-level hardware.
+
+As discussed in Section 4, we evaluate on the \textbf{Mip-NeRF 360} dataset \cite{barron2022mipnerf360}, which is the de-facto benchmark for 3DGS. Among the nine scenes, we focus on \texttt{bonsai}, an indoor scene of about 290 photographs. Three considerations motivate this choice: it is one of the smallest scenes in the dataset, so the full 30k-iteration training run fits comfortably in the Colab time budget; it is contained, so the unbounded-background issues that affect the outdoor scenes are minimised; and it is reported in Table~1 of \cite{kerbl20233dgs}, which gives us a direct reference to compare against. Images are processed at half resolution (the \texttt{images\_2/} folder shipped with the dataset), and the official Mip-NeRF 360 train/test split is used (every 8\textsuperscript{th} view held out for testing).
+
+\subsection{Protocol}
+
+We follow exactly the protocol of \cite{kerbl20233dgs}: 30{,}000 optimisation iterations, the default Adaptive Density Control schedule, and the same composite $\mathcal{L}_1 + \mathcal{L}_{\textrm{D-SSIM}}$ loss with $\lambda = 0.2$. After training we use the \texttt{render.py} and \texttt{metrics.py} scripts shipped with the repository to render the test views and compute PSNR, SSIM and LPIPS. We additionally measure (a) the wall-clock training time, (b) the final number of 3D Gaussians (read directly from the saved \texttt{point\_cloud.ply}), and (c) the inference frame rate, obtained by re-rendering all test views in a tight loop after a short warm-up.
+
+\subsection{Results}
+
+Table~\ref{tab:exp_bonsai} reports our measurements alongside the reference numbers published in \cite{kerbl20233dgs} for the same scene.
+
+\begin{table}[h]
+    \centering
+    \small
+    \begin{tabular}{lcc}
+        \toprule
+        Metric                & Ours (Colab T4) & Reference \cite{kerbl20233dgs} \\
+        \midrule
+        PSNR ($\uparrow$)         & 32.44    & 32.20 \\
+        SSIM ($\uparrow$)         & 0.948    & 0.941 \\
+        LPIPS ($\downarrow$)      & 0.173    & 0.205 \\
+        Training time (min)       & 67       & $\sim 30$ \\
+        \# Gaussians ($10^6$)     & 1.07     & --- \\
+        Inference FPS             & 42.9     & $\sim 150$ \\
+        \bottomrule
+    \end{tabular}
+    \caption{3D Gaussian Splatting on the Mip-NeRF 360 \texttt{bonsai} scene. Our run uses a Colab T4 GPU; the reference numbers are reported in Table~1 of \cite{kerbl20233dgs} and were obtained on an NVIDIA A6000.}
+    \label{tab:exp_bonsai}
+\end{table}
+
+\textbf{Quality.} The three quality metrics land essentially on top of the reference numbers: PSNR is $0.24$ dB higher, SSIM is $+0.007$, and LPIPS is $0.032$ lower (i.e.\ better) than \cite{kerbl20233dgs}. Since these metrics are scene-intrinsic and the official Mip-NeRF 360 train/test split is deterministic, the small differences are entirely consistent with the stochastic nature of Adaptive Density Control: each run of the optimiser converges to a slightly different cloud of Gaussians, but the rendering quality on the test views remains stable. The take-away is that the original 3DGS recipe is reproducible out of the box on a free Colab T4, with no hyper-parameter tuning, and that the published quality numbers are not an artifact of the high-end hardware used in the paper.
+
+\textbf{Speed.} The two metrics that do depend on hardware tell a much less rosy story. Training takes $67$ minutes on the T4 against the $\sim 30$ minutes reported on an A6000 ($\sim 2.2\times$ slower), and inference runs at $42.9$ FPS against $\sim 150$ FPS ($\sim 3.5\times$ slower). This gap is in line with the raw compute difference between the two GPUs: the T4 delivers around $8$ TFLOPS of FP32 throughput against $\sim 38$ TFLOPS for the A6000, and has substantially less memory bandwidth. It is worth noting, however, that even at $42.9$ FPS the trained model is comfortably above the $30$ FPS interactive threshold, and on a free Colab GPU. This is the practical strength that the 3DGS paper advertises: even on entry-level hardware, the rendering pipeline remains real-time, while NeRF-style methods on the same scene would take seconds per frame.
+
+\textbf{Model size.} The final model contains $\sim 1.07$ million Gaussians, which at the standard 59 floats per Gaussian corresponds to roughly $250$ MB on disk. This is a small enough footprint to be streamed over the network and visualised in a browser, and explains why an entire ecosystem of in-browser 3DGS viewers and editors has appeared since the original paper.
+
+Overall, the experiment confirms the central message of \cite{kerbl20233dgs}: 3D Gaussian Splatting offers a very favourable quality-vs-cost trade-off compared to NeRF-based pipelines, and the trade-off scales gracefully down to commodity GPUs.
 
 \section{Conclusions}
 
