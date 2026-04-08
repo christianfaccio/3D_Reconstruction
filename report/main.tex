@@ -41,7 +41,7 @@
 % Full-width abstract
 \renewcommand{\maketitlehookd}{%
 	\begin{abstract}
-		\noindent I
+		\noindent 3D scene reconstruction from multiple views is a long-standing problem in computer vision, and the recent introduction of 3D Gaussian Splatting (3DGS) has reshaped the field by combining the rendering quality of Neural Radiance Fields with real-time inference and a fully explicit scene representation. In this work we review the state of the art of multi-view 3D reconstruction methods centred on the Gaussian Splatting paradigm. We first place 3DGS in context by surveying the photogrammetry and Structure-from-Motion pipelines that precede it and the Neural Radiance Field family that motivated it, then describe the core 3DGS algorithm in detail, including the 3D-to-2D Gaussian projection, the Adaptive Density Control schedule and the tile-based rasteriser that makes real-time rendering possible. We then discuss recent applications of 3DGS in autonomous driving, bi-modal RGB-IR mapping, in-the-wild urban surveying, super-resolution and sparse-view reconstruction, and digital twins for infrastructure inspection. We complete the review with a brief overview of the datasets that have become standard benchmarks for the technique, and a small reproduction experiment in which we run the official 3DGS implementation on the \texttt{bonsai} scene of the Mip-NeRF 360 dataset using a free Colab T4 GPU. Our run matches the quality numbers reported in the original paper to within run-to-run variance, while incurring a $\sim 2$--$3.5\times$ slowdown in training and inference, confirming that 3DGS scales gracefully down to commodity hardware without sacrificing rendering quality.
 	\end{abstract}
 }
 
