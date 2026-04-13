@@ -218,8 +218,6 @@ https://github.com/dreamgaussian/dreamgaussian
 
 This section explores some of the diverse applications of 3D Gaussian Splatting (3DGS) as documented in the most recent literature from 2025 and 2026. As we will see in recent real-word tasks, 3DGS has evolved into a robust framework for geometric reconstruction and semantic scene understanding.
 
-\textbf{TODO}: Explain a bit more how and where each framework integrates gaussian splatting.For now, just described and summarized some of the recent work.
-
 \subsection{Bird's-Eye-View (BEV) Representation and Autonomous Driving}
 
 One of the most significant integrations of 3DGS is in autonomous driving pipelines. Instead of treating the perception as a black-box, recent frameworks like Splat2BEV \cite{splat2bev} use 3DGS as an intermediate representation. The approach allows the following:
@@ -278,7 +276,9 @@ Recent architectural improvements have augmented the applicability of 3DGS to ar
 	\item \textit{Sparse-view mesh generation}. Although not a 3D approach, MeshSplat uses 2D Gaussians as a link to integrate accurate surface geometry from very sparse input views, helping mesh reconstruction in computer vision tasks.
 \end{itemize}
 
-\textbf{TODO}: Explain where and how Gaussian Splatting is applied in SR3S and (optionally) MeshSplat
+In a 3D super-resolution reconstruction in SR3R, 3DGS is implemented as the target high-resolution representation. The framework uses a neural network to predict high-resolution Gaussian attributes directly from sparse and low-resolution views that work as input. The way it works is the following: first a backbone generates a low-resolution "scaffold" and, then, SR3R takes the scaffold and upscales it into a high-resolution 3DGS representation; allowing the model to learn the 3D geometry and appearance from large-scale data.
+To improve then the precision of the scene reconstructed, the framework implements Gaussian offset learning. That works by having the model predict spatial offsets for the Gaussian primitives, that help stabilize the reconstruction and sharpen the geometric details that are lost in low-resolution views. Additionally to the spatial offsets, SR3R implements a refinement of the features for the Gaussian attributes by refininig the appearance features of each Gaussian. This ensures the final high-resolution 3DGS representation catches the detailed textures and lightning effects.
+What SR3R achieves in the end is a zero-shot generalization, producing high quality 3D models from limited and unseen data.
 
 \subsection{Infrastructure Inspection and Digital Twins}
 
@@ -287,7 +287,11 @@ In the field of high fidelity modeling of industrial infrastructure, 3DGS has sh
 	\item \textit{Power grid management}. Using 3DGS for the rapid 3D reconstruction of power transmission towers excelled at preserving fine structural details, like thin cables. These fine details are critical for fault detection and structural inspections.
 	\item \textit{Asset lifecycle management}. By reducing the modeling time by $\sim 70\%$ compared to traditional methods, 3DGS seems to provide a technical foundation for digital twins, permitting documentation in virtual environments.
 \end{itemize}
-\textbf{TODO}: Explain where and how Gaussian Splatting is applied in \cite{powergrid_3dgs}
+
+In \cite{powergrid_3dgs}, 3DGS is used as the reconstruction framework to make high-precision 3D models of power transmission towers. The 3DGS is implemented on top of a sparse point cloud that is generated through Structure from Motion (SfM). First RGM images captured by UAVs are processed using the COLMAP framework to estimate the camera poses and the sparse point cloud. Then, each 3D point is converted into the center of a learnable 3D Gaussian primitive that acts as a first distribution that accelerated the model's convergence and assures consistenty.
+The towers are modeled with a lot of anisotropic Gaussians so the model can adapt to geometric features of changing scales, effectively allowing the model to represent robust structures but also fine details like thin cables. 
+To later refine the model, a forward rendering and backward optimization loop is used. The mapping of the 3D world to a 2D image is done by transforming the primitives to the camera coordinate system, and the 2D covariance on the image plane is computed by a projection Jacobian matrix. Then a rendering pipeline collects the Gaussians influencing a pixel and performs alpha blending in depth order, synthetizing the final image.
+There is also an adaptative density control method that handles the skeleton structure of power towers: if the current Gaussians are not enough to represent fine details, the system clones the existing primitives to add the details; and, if primitives are too large, it splits them into smaller and finer distributions to improve local resolution and capture fine geometric features. \\
 
 Other authors also proposed a novel GS-enabled digital twin method \cite{digitaltwin_damage} for precise 3D damage visualization in civil infrastructures. This framework provides some key contributions:
 \begin{itemize}
@@ -295,7 +299,12 @@ Other authors also proposed a novel GS-enabled digital twin method \cite{digital
 	\item \textit{Hierarchical reconstruction}. By using a hierarchical reconstruction strategy, the framework is able to conserve computational resources by first using low-resolution images for the initial overview of the structure. Then, only for regions with damage, high-resolution images are used to fine-tune the model, achieving a detailed reconstruction.
 	\item \textit{Damage progression tracking}. It enables model updates  as the conditions of the structure evolve, so it permits the documentation of damage progression without requiring a full re-run of the scene reconstruction.
 \end{itemize}
-\textbf{TODO}: Explain where and how Gaussian Splatting is applied in \cite{digitaltwin_damage}
+
+In \cite{digitaltwin_damage}, 3DGS is adapted to be semantically aware of damage in infrastructures, such as cracks and broken fragments. In this adapted 3DGS, each primitive is defined, as always by its position, covariance matrix (scale and orientation) and opacity, and the color is stored as RGB values enchanced by spherical harmonics to capture effects like shadows. The framework also allows regional adjustments, so it is possible to refine only the Gaussians related to specific damaged areas.
+One of the innovation the framework proposes is the modification of the optimization objective in order to add 2D damage segmentation results directly into the 3D reconstruction. The raw images are not the only reference now, but the loss function compares the rendered outputs of the model against 2D segmented images, that are masks generated by deep learning models. With the new integration, the 3DGS multiview consistenct serves as a refinement process to supress inconsistencies that could be introduced by errors in the 2D segmented images. Basically the consensus across multiple viewpoints are prioritized over single instances in the 2D images. 
+Furthermore, the framework implements a multi-scale strategy to balance efficiency and high-fidelity. First the framework generates a general and low-resolution model from low-resolution images to create the overall geometry. Secondly, when regions with suspected damage are identified, the framework separates the associated Gaussians through color filtering and projection validation. These Gaussians are updated using high-resolution images and the model can either be retrained or fine-tuned to capture the details of the cracks.
+Finally, on the damage progression feature of this framework, new collected images are calibrated to the historical coordinate system of the model, and the framework renders synthetic views from the historical model from the same perspective as the new images. A pixel-wise comparison is performed between the synthetic masks and the new masks, so the system can highlight new damage. The new damage is then integrated into the existing 3D model through refinement of the relevant Gaussians, avoiding doing a full reconstruction of the structure.
+
 
 \section{Experimentation}
 
