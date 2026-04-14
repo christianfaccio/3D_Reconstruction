@@ -63,7 +63,7 @@ In this work, we review the state of the art of the methods that address the pro
 \section{Previous Work}
 In this section, we discuss different methodologies and resources for 3D multiscene reconstruction that have been relevant in the literature of the topic. We expect to provide a general context of the field of 3D reconstruction to those readers who may not be up to date in the field as well as providing understanding on what characterises the Gaussian Splatting technique, explained in detail in Section 3.
 
-\textbf{TODO}: Find reviews
+Comprehensive surveys exist at several levels of the 3D reconstruction stack and are a useful entry point to the field: classical Structure-from-Motion pipelines are thoroughly reviewed in \cite{survey_sfm_ozyesil2017}, while \cite{survey_mvs_furukawa2015} offers a tutorial on Multi-View Stereo that complements SfM by producing dense reconstructions. For the neural side, \cite{survey_nerf_gao2022} surveys Neural Radiance Fields and, in its more recent revisions, also bridges the transition towards Gaussian-based representations. Building on these, the following subsections focus on the specific methodological threads most relevant to Gaussian Splatting.
 
 \subsection{Photogrammetry}
 Photogrammetry refers to the act of taking reliable measurements from photographs. Specifically, it relies in the idea that an object can be represented in three dimension from multiple two-dimensional images taken from different angles, following the same principles behind the stereoscopic human vision \cite{photogrammetry_2freedom}. It can be understood as an inverse process from photography: obtain a 3D model from features of 2D representations.
@@ -206,13 +206,13 @@ Finally, \textbf{tile-based rasterization} is used to represent the 3D gaussians
 
 \subsection{Extensions of Gaussian Splatting}
 
-\textbf{TODO}
+Since the original 3DGS paper, a growing body of work has tried to address its main limitations, namely the poor geometric regularisation of the Gaussian cloud, the difficulty of recovering an explicit surface, and the restriction to reconstruction from existing multi-view captures. We discuss here three representative extensions that illustrate these directions.
 
-https://github.com/Anttwo/SuGaR ?
+A first line of work focuses on improving the \textbf{geometric quality} of the reconstruction. GaussianPro \cite{cheng2024gaussianpro} revisits the densification strategy of 3DGS, which relies on sparse SfM initialisation and tends to produce erroneous Gaussians in textureless regions. Inspired by classical Multi-View Stereo, it introduces a progressive propagation scheme that guides densification along the scene's surface structure, together with explicit plane constraints during optimisation. This yields more accurate geometry on large outdoor scenes, with reported PSNR improvements of around 1.15 dB over vanilla 3DGS on the Waymo dataset.
 
-https://github.com/kcheng1021/GaussianPro 
+A second direction targets \textbf{surface and mesh extraction}. A limitation of 3DGS is that the optimised Gaussians are unstructured and do not directly provide an explicit surface, which is inconvenient for downstream tasks such as editing, animation or physically-based rendering. SuGaR \cite{guedon2024sugar} addresses this by adding a regularisation term that encourages Gaussians to align with the underlying surface, and then uses Poisson reconstruction to extract a triangle mesh from them. An optional refinement step binds Gaussians to the mesh and jointly optimises both through the Gaussian Splatting renderer, allowing mesh extraction in minutes instead of hours compared to SDF-based baselines, while preserving rendering quality.
 
-https://github.com/dreamgaussian/dreamgaussian 
+Finally, Gaussian Splatting has been coupled with generative models to move from \textbf{reconstruction to 3D content creation}. DreamGaussian \cite{tang2024dreamgaussian} replaces the occupancy-based representations used in prior NeRF-based text- or image-to-3D pipelines with a generative 3DGS model, exploiting the progressive densification of Gaussians to speed up convergence. A companion mesh extraction and UV-space texture refinement stage produces textured meshes from a single image in roughly two minutes, about an order of magnitude faster than comparable NeRF-based approaches. This shows that the efficiency of 3DGS is not limited to multi-view reconstruction but also transfers to generative settings.
 
 \section{Applications}
 
