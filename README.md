@@ -1,5 +1,3 @@
-# 3D_Reconstruction
-
 <div align="center">
     <h1>3D Reconstruction with Gaussian Splatting</h1>
     <h3>Authors: Christian Faccio, Elena Lorite Acosta, Jorge Huedo Martínez</h3>
